@@ -44,6 +44,7 @@ func NewAptClient(opts ...option) *Client {
 	return &aptClient
 }
 
+// Download returns a ReadCloser representing a stream of the package's data from the mirror.
 func (a *Client) Download(pack Package) (io.ReadCloser, error) {
 	resp, err := a.httpClient.Get(fmt.Sprintf("%v/%v", a.mirror, pack.Filename))
 	if err != nil {
@@ -53,6 +54,7 @@ func (a *Client) Download(pack Package) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
+// GetPakageByName returns a package by name.
 func (a *Client) GetPackageByName(name string) (Package, error) {
 	packageReader, err := a.Packages()
 	if err != nil {
@@ -74,6 +76,7 @@ func (a *Client) GetPackageByName(name string) (Package, error) {
 	return Package{}, fmt.Errorf("package %v not found", name)
 }
 
+// Packages returns a PackageReader for the current distribution and architecture.
 func (a *Client) Packages() (*PackageReader, error) {
 	resp, err := a.httpClient.Get(fmt.Sprintf("%v/dists/%v/main/binary-%v/Packages.gz", a.mirror, a.distribution, a.arch))
 	if err != nil {
@@ -88,10 +91,11 @@ func (a *Client) Packages() (*PackageReader, error) {
 	return NewPackageReader(reader), nil
 }
 
-func (a *Client) GetPackagesByFile(file string) (Contents, error) {
+// GetPackagesByFile returns the list of packages a given file path is contained in.
+func (a *Client) GetPackagesByFile(file string) ([]string, error) {
 	contentsReader, err := a.Contents()
 	if err != nil {
-		return Contents{}, err
+		return nil, err
 	}
 	for {
 		contents, err := contentsReader.Next()
@@ -99,16 +103,17 @@ func (a *Client) GetPackagesByFile(file string) (Contents, error) {
 			break
 		}
 		if err != nil {
-			return Contents{}, err
+			return nil, err
 		}
 		if contents.File == file {
-			return contents, nil
+			return contents.Packages, nil
 		}
 	}
 
-	return Contents{}, fmt.Errorf("file %v not found", file)
+	return nil, fmt.Errorf("file %v not found in any packages", file)
 }
 
+// Contents returns a ContentsReader for the current distribution and architecture.
 func (a *Client) Contents() (*ContentsReader, error) {
 	resp, err := a.httpClient.Get(fmt.Sprintf("%v/dists/%v/main/Contents-%v.gz", a.mirror, a.distribution, a.arch))
 	if err != nil {
