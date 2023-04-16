@@ -1,4 +1,4 @@
-package man1c
+package man
 
 import (
 	"archive/tar"
