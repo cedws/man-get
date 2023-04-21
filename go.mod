@@ -1,4 +1,4 @@
-module github.com/cedws/man1c
+module github.com/cedws/man-get
 
 go 1.20
 

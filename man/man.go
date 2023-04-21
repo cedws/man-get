@@ -11,7 +11,7 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/cedws/man1c/deb"
+	"github.com/cedws/man-get/deb"
 	"github.com/laher/argo/ar"
 	"github.com/ulikunitz/xz"
 )

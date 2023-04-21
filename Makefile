@@ -3,7 +3,7 @@ GOFLAGS = -trimpath -ldflags "$(LDFLAGS)"
 
 define build
 	mkdir -p bin
-	CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -o bin/man1c-$(1)-$(2) $(GOFLAGS)
+	CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -o bin/man-get-$(1)-$(2) $(GOFLAGS)
 endef
 
 all: release

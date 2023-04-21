@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cedws/man1c/man"
+	"github.com/cedws/man-get/man"
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "debman",
-	Short: "debman is a tool to search for manpages in Debian packages",
+	Use:   "man-get",
+	Short: "Cross-platform CLI tool to grab Debian manpages",
 	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		man.GetPages(args[0], args[1:])
