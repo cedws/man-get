@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 )
 
 type option func(*Client)
@@ -27,11 +28,18 @@ func WithArch(arch string) option {
 	}
 }
 
+func WithCacheDir(cacheDir string) option {
+	return func(a *Client) {
+		a.cacheDir = cacheDir
+	}
+}
+
 type Client struct {
 	httpClient   *http.Client
 	mirror       string
 	distribution string
 	arch         string
+	cacheDir     string
 }
 
 func NewAptClient(opts ...option) *Client {
@@ -41,12 +49,21 @@ func NewAptClient(opts ...option) *Client {
 	for _, opt := range opts {
 		opt(&aptClient)
 	}
+
+	if aptClient.cacheDir != "" {
+		aptClient.httpClient.Transport = &cachingRoundTripper{
+			RoundTripper: http.DefaultTransport,
+			cacheDir:     aptClient.cacheDir,
+		}
+	}
+
 	return &aptClient
 }
 
 // Download returns a ReadCloser representing a stream of the package's data from the mirror.
 func (a *Client) Download(pack Package) (io.ReadCloser, error) {
-	resp, err := a.httpClient.Get(fmt.Sprintf("%v/%v", a.mirror, pack.Filename))
+	url := fmt.Sprintf("%v/%v", a.mirror, pack.Filename)
+	resp, err := a.httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +71,8 @@ func (a *Client) Download(pack Package) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-// GetPakageByName returns a package by name.
-func (a *Client) GetPackageByName(name string) (Package, error) {
+// QueryPackage returns a package queried by name.
+func (a *Client) QueryPackage(name string) (Package, error) {
 	packageReader, err := a.Packages()
 	if err != nil {
 		return Package{}, err
@@ -78,7 +95,8 @@ func (a *Client) GetPackageByName(name string) (Package, error) {
 
 // Packages returns a PackageReader for the current distribution and architecture.
 func (a *Client) Packages() (*PackageReader, error) {
-	resp, err := a.httpClient.Get(fmt.Sprintf("%v/dists/%v/main/binary-%v/Packages.gz", a.mirror, a.distribution, a.arch))
+	url := fmt.Sprintf("%v/dists/%v/main/binary-%v/Packages.gz", a.mirror, a.distribution, a.arch)
+	resp, err := a.httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -91,31 +109,34 @@ func (a *Client) Packages() (*PackageReader, error) {
 	return NewPackageReader(reader), nil
 }
 
-// GetPackagesByFile returns the list of packages a given file path is contained in.
-func (a *Client) GetPackagesByFile(file string) ([]string, error) {
+// QueryContents returns a list of packages that contain the given files.
+func (a *Client) QueryContents(files []string) ([]Contents, error) {
+	var contents []Contents
+
 	contentsReader, err := a.Contents()
 	if err != nil {
 		return nil, err
 	}
 	for {
-		contents, err := contentsReader.Next()
+		entry, err := contentsReader.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return nil, err
 		}
-		if contents.File == file {
-			return contents.Packages, nil
+		if slices.Contains(files, entry.File) {
+			contents = append(contents, entry)
 		}
 	}
 
-	return nil, fmt.Errorf("file %v not found in any packages", file)
+	return contents, nil
 }
 
 // Contents returns a ContentsReader for the current distribution and architecture.
 func (a *Client) Contents() (*ContentsReader, error) {
-	resp, err := a.httpClient.Get(fmt.Sprintf("%v/dists/%v/main/Contents-%v.gz", a.mirror, a.distribution, a.arch))
+	url := fmt.Sprintf("%v/dists/%v/main/Contents-%v.gz", a.mirror, a.distribution, a.arch)
+	resp, err := a.httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
