@@ -1,6 +1,6 @@
 module github.com/cedws/man-get
 
-go 1.20
+go 1.21
 
 require (
 	github.com/laher/argo v0.0.0-20140722103944-11d91c83cc0f

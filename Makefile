@@ -1,20 +1,20 @@
 LDFLAGS = -s -w
-GOFLAGS = -trimpath -ldflags "$(LDFLAGS)"
+GOFLAGS = -trimpath -ldflags="$(LDFLAGS)"
 
-define build
-	mkdir -p bin
-	CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -o bin/man-get-$(1)-$(2) $(GOFLAGS)
-endef
-
-all: release
+all: build test
 
 .PHONY: release
-release:
-	$(call build,linux,amd64)
-	$(call build,linux,arm64)
-	$(call build,darwin,amd64)
-	$(call build,darwin,arm64)
+release: test
+	mkdir -p bin
+	GOOS=darwin  GOARCH=arm64 go build $(GOFLAGS) -o bin/man-get-darwin-arm64 -v
+	GOOS=linux   GOARCH=amd64 go build $(GOFLAGS) -o bin/man-get-linux-amd64 -v
+	GOOS=windows GOARCH=amd64 go build $(GOFLAGS) -o bin/man-get-windows-amd64.exe -v
 
-.PHONY: clean
-clean:
-	rm -rf bin
+.PHONY: build
+build:
+	mkdir -p bin
+	go build $(GOFLAGS) -o bin/man-get -v
+
+.PHONY: test
+test:
+	go test -v ./...
