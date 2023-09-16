@@ -22,6 +22,7 @@ const finishMessage = `Append %v to your MANPATH to open the downloaded manpages
 	$ set -x MANPATH "$MANPATH:%v"
 `
 
+// DefaultSections returns the default man page sections.
 func DefaultSections() []string {
 	return []string{
 		"1", "n", "l", "8", "3", "0", "2", "3posix", "3pm", "3perl", "3am", "5", "4", "9", "6", "7",
@@ -29,8 +30,8 @@ func DefaultSections() []string {
 }
 
 func cacheDir() (string, error) {
-	if dataHome, ok := os.LookupEnv("XDG_CACHE_HOME"); ok {
-		return dataHome, nil
+	if cacheHome, ok := os.LookupEnv("XDG_CACHE_HOME"); ok {
+		return cacheHome, nil
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {

@@ -51,7 +51,7 @@ func (c *cachingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	if err != nil {
 		return nil, err
 	}
-	if os.IsNotExist(statErr) || stat.Size() != length {
+	if os.IsNotExist(statErr) || (statErr == nil && stat.Size() != length) {
 		// file doesn't exist or was partially downloaded
 		if _, err := io.Copy(file, resp.Body); err != nil {
 			return nil, err
@@ -61,6 +61,7 @@ func (c *cachingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 		}
 	}
 
+	resp.Body.Close()
 	resp.Body = file
 	return resp, nil
 }

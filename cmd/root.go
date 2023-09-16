@@ -9,12 +9,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const examples = `man-get tar ed
+man-get 1 haproxy`
+
 var sectionPattern = regexp.MustCompile("^[0-9]$")
 
 var rootCmd = &cobra.Command{
-	Use:   "man-get",
-	Short: "CLI tool to grab Debian manpages",
-	Args:  cobra.MinimumNArgs(1),
+	Use:     "man-get [section] <page>...",
+	Short:   "CLI tool to grab Debian manpages",
+	Example: examples,
+	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		pages := args[0:]
 		sections := man.DefaultSections()
