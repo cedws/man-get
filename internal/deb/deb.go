@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"slices"
 )
 
@@ -62,8 +63,11 @@ func NewAptClient(opts ...option) *Client {
 
 // Download returns a ReadCloser representing a stream of the package's data from the mirror.
 func (a *Client) Download(pack Package) (io.ReadCloser, error) {
-	url := fmt.Sprintf("%v/%v", a.mirror, pack.Filename)
-	resp, err := a.httpClient.Get(url)
+	u, err := url.JoinPath(a.mirror, pack.Filename)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := a.httpClient.Get(u)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +99,11 @@ func (a *Client) QueryPackage(name string) (Package, error) {
 
 // Packages returns a PackageReader for the current distribution and architecture.
 func (a *Client) Packages() (*PackageReader, error) {
-	url := fmt.Sprintf("%v/dists/%v/main/binary-%v/Packages.gz", a.mirror, a.distribution, a.arch)
-	resp, err := a.httpClient.Get(url)
+	u, err := url.JoinPath(a.mirror, "dists", a.distribution, "main", "binary-"+a.arch, "Packages.gz")
+	if err != nil {
+		return nil, err
+	}
+	resp, err := a.httpClient.Get(u)
 	if err != nil {
 		return nil, err
 	}
@@ -135,8 +142,11 @@ func (a *Client) QueryContents(files []string) ([]Contents, error) {
 
 // Contents returns a ContentsReader for the current distribution and architecture.
 func (a *Client) Contents() (*ContentsReader, error) {
-	url := fmt.Sprintf("%v/dists/%v/main/Contents-%v.gz", a.mirror, a.distribution, a.arch)
-	resp, err := a.httpClient.Get(url)
+	u, err := url.JoinPath(a.mirror, "dists", a.distribution, "main", "Contents-"+a.arch+".gz")
+	if err != nil {
+		return nil, err
+	}
+	resp, err := a.httpClient.Get(u)
 	if err != nil {
 		return nil, err
 	}
