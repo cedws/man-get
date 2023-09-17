@@ -29,17 +29,6 @@ func DefaultSections() []string {
 	}
 }
 
-func cacheDir() (string, error) {
-	if cacheHome, ok := os.LookupEnv("XDG_CACHE_HOME"); ok {
-		return cacheHome, nil
-	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return path.Join(home, ".cache", "man-get"), nil
-}
-
 func dataHomeDir() (string, error) {
 	if dataHome, ok := os.LookupEnv("XDG_DATA_HOME"); ok {
 		return dataHome, nil
@@ -67,19 +56,7 @@ func pagePath(page, section string) (string, error) {
 	return path.Join(sectionPath, fmt.Sprintf("%v.%v.gz", page, section)), nil
 }
 
-func Fetch(desiredSections, desiredPages []string) error {
-	cacheDir, err := cacheDir()
-	if err != nil {
-		return err
-	}
-
-	client := deb.NewAptClient(
-		deb.WithMirror("https://ftp.debian.org/debian"),
-		deb.WithDistribution("bullseye"),
-		deb.WithArch("amd64"),
-		deb.WithCacheDir(cacheDir),
-	)
-
+func Fetch(client *deb.Client, desiredSections, desiredPages []string) error {
 	for _, page := range desiredPages {
 		sections, err := findSectionsForPage(client, page)
 		if err != nil {
